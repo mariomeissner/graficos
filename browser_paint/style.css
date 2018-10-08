@@ -3,6 +3,7 @@
     margin: auto;
     display: block;
     width: 800px;
+    background-color: white;
 
     /* To avoid scroll bars in full screen, do:
     margin: 0px;
@@ -20,6 +21,15 @@ h3 {
     margin-top: 0px;
 }
 
+input {
+    width: 30px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+body {
+    background-color: lightblue;
+}
 
 .column {
     float: left;
@@ -32,7 +42,8 @@ h3 {
 }
 
 .row {
-    width: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .row:after {
@@ -45,4 +56,22 @@ h3 {
     text-align: center;
     width: 130px;
     margin-top: 0px;
+}
+
+#origin {
+    width: 100px;
+}
+
+.button {
+    background-color: rgb(111, 176, 219);
+    font-size: 15px;
+    padding: 12px 25px;
+    border-radius: 15px;
+    transition-duration: 0.3s;
+    display: block;
+    margin: 20px;
+}
+
+.button:hover {
+    background-color: rgb(30, 102, 196);
 }
