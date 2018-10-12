@@ -25,9 +25,8 @@ function Painter(canvas) {
     var transX = height * 0.5;
     var transY = width * 0.5;
 
-    // Contenedor de acciones
+    // Performed actions container
     var actions = [];
-
 
     // Draw black border around canvas
     c.strokeStyle = 'black';

@@ -29,17 +29,19 @@ input {
 
 body {
     background-color: lightblue;
+    width: 1200px;
 }
 
 .column {
     float: left;
+    
 }
 
-.left, .right{
+/* .left, .right{
     width: 250px;
     padding-left: 20px;
     padding-right: 20px;
-}
+} */
 
 .row {
     margin-left: auto;
