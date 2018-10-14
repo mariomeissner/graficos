@@ -1,45 +1,40 @@
 <!DOCTYPE HTML>
 <html>
 
-  <head>
-    <link rel="stylesheet" type="text/css" href="style.css">
-  </head>
+<head>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
 
-  <body>
+<body>
 
-    <h1>Paint in your Browser</h1>
+  <h1>Paint in your Browser</h1>
 
-    <div class="row">
+  <div class="row">
 
-      <div class="column left">
-        <button class="button" id="axis"> Axis </button>
-        <div class="row">
+    <div class="column">
+      <button class="button" id="axis"> Show / hide axis </button>
+      <button class="button" id="axis"> Undo </button>
+      <button class="button" id="point-mode"> Point mode </button>
+      <button class="button" id="line-mode"> Line mode </button>
 
-        <button class="button column" id="origin"> 
-          Set Origin
-        </button>
-        <input class="column" type="text" id="textbox_x" name="x" value="0">
-        <input class="column" type="text" id="textbox_y" name="y" value="0">
-        </div>
-      </div>
+    </div>
 
-      <canvas class="canvas column" width="800" height="600">
-          <p>Your browser doesn't support canvas. Noob!</p>
-      </canvas>
-      
-      <div class="column right" id='right-col'>
+    <canvas class="canvas column" width="800" height="600">
+      <p>Your browser doesn't support canvas. Noob!</p>
+    </canvas>
+
+    <div class="column" id='right-col'>
+
         <h3>Mouse coordinates:</h3>
         <div id="mouse-box">
           (0, 0)
-        </div>
-        <p id="actions_box">Actions:</p>
       </div>
-      
-    </div>
 
 
-    <script src="canvas.js"></script>
-
-  </body>
+      <p>Log of actions:</p>
+      <div id="actions-box"></div></div>
+    <script src="main.js"></script>
+  </div>
+</body>
 
 </html>

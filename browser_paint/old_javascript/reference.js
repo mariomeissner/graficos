@@ -39,3 +39,17 @@ c.fillRect(50, 50, 100, 150);
 // Set full screen
 var width = canvas.width = window.innerWidth;
 var height = canvas.height = window.innerHeight;
+
+
+// Deprecated things
+// Set origin
+this.setOrigin = function() {
+    painter.hideAxis()
+    transX = parseInt(document.getElementById('textbox_x').value);
+    transY = parseInt(document.getElementById('textbox_y').value);
+    console.log("Changing to:" + transX + ", " + transY);
+    painter.showAxis()
+}
+document.getElementById("origin").addEventListener("click", this.setOrigin);
+
+
