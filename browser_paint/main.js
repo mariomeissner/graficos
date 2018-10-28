@@ -16,6 +16,7 @@ function Painter(cm) {
 
             case "point":
                 cm.point(x, y);
+                cm.save_buffer()
                 point = new Point(x, y);
                 addAction(point);
                 break;
@@ -62,9 +63,8 @@ function Painter(cm) {
         }
         line = new Line(pointList[0], pointList[pointList.length - 1]);
         addAction(line);
+        cm.save_buffer()
     }
-
-
 
     this.testLine = function (x1, y1, x2, y2) {
         draw_line(x1, y1, x2, y2)
@@ -75,8 +75,6 @@ function Painter(cm) {
         document.getElementById("actions-box").innerText +=
             action.toString() + "\n";
     }
-
-
 
 
     function configure() {
@@ -96,7 +94,10 @@ function Painter(cm) {
         }, false);
 
         // Button listeners
-        document.getElementById("axis").addEventListener("click", cm.setAxisVisibility);
+        document.getElementById("axis").addEventListener("click", function() {
+            cm.showAxis();
+            cm.save_buffer();
+        });
         document.getElementById("point-mode").addEventListener("click", function () {
             drawMode = "point";
         });
@@ -111,6 +112,73 @@ function Painter(cm) {
         document.getElementById("bresenham").addEventListener("click", function () {
             drawMode = "bresenham";
         });
+
+        document.getElementById("undo").addEventListener("click", cm.undo);
+        document.getElementById("redo").addEventListener("click", cm.redo);
+        document.getElementById("clear").addEventListener("click", function() {
+            document.getElementById("actions-box").innerText = "";
+            cm.clear();
+        });
+    }
+
+    this.testPoints = function() {
+
+        function printList(list) {
+            var out = "";
+            for (var i = 0; i < list.length; i++){
+                out += `(${list[i].x}, ${list[i].y}), `;
+            }
+            return out;
+        }
+
+        startPoints = [
+            {x: 0, y: 1},
+            {x: 1, y: 3},
+            {x: 2, y: 1},
+            {x: 3, y: 1},
+            {x: 3, y: 0},
+            {x: 0, y: 0},
+            {x: 0, y: 0},
+            {x: 0, y: 0},
+            {x: -2, y: -3},
+            {x: -2, y: -3},
+            {x: 2, y: 3},
+            {x: 2, y: 3},
+            {x: 0, y: 0},
+            {x: 12, y: 4},
+            {x: -4, y: 2},
+            {x: -2, y: 3},
+        ];
+
+        endPoints = [
+            {x: 7, y: 3},
+            {x: 6, y: 3},
+            {x: 2, y: 6},
+            {x: 6, y: 4},
+            {x: 6, y: 12},
+            {x: -8, y: -4},
+            {x: 8, y: 3},
+            {x: 5, y: 5},
+            {x: -11, y: -6},
+            {x: -11, y: 2},
+            {x: -4, y: 7},
+            {x: -4, y: -9},
+            {x: 11, y: 4},
+            {x: 1, y: 1},
+            {x: -4, y: -8},
+            {x: 9, y: -6}
+        ];
+
+        for (var i = 0; i < startPoints.length; i++){
+            [x1, y1, x2, y2] = [startPoints[i].x, startPoints[i].y, endPoints[i].x, endPoints[i].y];
+            //console.log(`Punto  ${i} con SlopeIntercept:\n`);
+            console.log(printList(Algorithms.slopeIntersect(x1, y1, x2, y2)))
+            //console.log(`Punto  ${i} con DDA:\n`);
+            console.log(printList(Algorithms.dda(x1, y1, x2, y2)));
+            //console.log(`Punto  ${i} con Bresenham:\n`);
+            console.log(printList(Algorithms.bresenham_full(x1, y1, x2, y2)));
+        }
+
     }
 }
 
@@ -122,7 +190,7 @@ class Algorithms {
 
         // If first point farther right than last one, run backwards
         if (x1 > x2) {
-            list = Algorithms.slopeIntersect(x2, y2, x1, y1)
+            list = Algorithms.slopeIntersect(x2, y2, x1, y1).reverse();
         }
 
         // If vertical 
@@ -224,7 +292,7 @@ class Algorithms {
                 } else {
                     y += s2;
                 }
-                e - 2 * dx;
+                e -= 2 * dx;
             }
             if (flag) {
                 y += s2;
@@ -233,7 +301,7 @@ class Algorithms {
             }
             e += 2 * dy;
         }
-
+        return lista;
 
     }
 
@@ -269,20 +337,26 @@ function CanvasManager(canvas) {
     var width = canvas.width;
     var height = canvas.height;
 
+    
     // Translation values, in real pixels
-    var transX = width * 0.5;
-    var transY = height * 0.5;
+    //var transX = width * 0.5;
+    //var transY = height * 0.5;
 
     // new translation
     c.translate(width * 0.5, height * 0.5)
 
-    // Invert Y axis ??? TODO
     c.scale(1, -1);
 
     // Draw black border around canvas
     c.strokeStyle = 'black';
     c.lineWidth = 2;
-    c.strokeRect(0, 0, width, height);
+    c.strokeRect(-width*0.5, -height*0.5, width, height);
+
+    // Store the last 5 states of the canvas for undo-redo functionality
+    var clearImage = c.getImageData(0, 0, width, height);
+    var buffer = [clearImage];
+    var buffer_pos = 0;
+    var MAX_LENGTH = 15;
 
     // Paints a point on canvas
     this.point = function (x, y, color = 'black') {
@@ -290,8 +364,6 @@ function CanvasManager(canvas) {
         // Turns fake pixels into real pixels
         x *= pixelSize;
         y *= pixelSize;
-        //x += transX;
-        //y += transY;
 
         // Paint on canvas
         c.fillStyle = color;
@@ -301,34 +373,72 @@ function CanvasManager(canvas) {
     // Axis visibility toggle
     this.setAxisVisibility = function () {
         c.strokeStyle = axisVisible ? 'white' : 'black';
-        c.strokeRect(0, -transY, 0, transY);
-        c.strokeRect(-transX, 0, transX, 0);
+        c.strokeRect(0, -height*0.5, 0, height);
+        c.strokeRect(-width*0.5, 0, width, 0);
         axisVisible = !axisVisible;
     }
 
     // Set axis visible
     this.showAxis = function () {
+
         c.strokeStyle = 'black';
-        c.strokeRect(0, -transY, 0, transY);
-        c.strokeRect(-transX, 0, transX, 0);
+        c.strokeRect(0, -height*0.5, 0, height);
+        c.strokeRect(-width*0.5, 0, width, 0);
         axisVisible = true;
+
     }
 
     // Set axis invisible
     this.hideAxis = function () {
         c.strokeStyle = 'white';
-        c.strokeRect(0, -transY, 0, transY);
-        c.strokeRect(-transX, 0, transX, 0);
+        c.strokeRect(0, -height*0.5, 0, height);
+        c.strokeRect(-width*0.5, 0, width, 0);
         axisVisible = false;
     }
 
     // Returns coordinates of a mouse click in fake pixels
     this.getMouseCoordinates = function (evt) {
         return {
-            x: Math.floor((evt.clientX - canvas.offsetLeft - transX) / pixelSize),
-            y: -Math.floor((evt.clientY - canvas.offsetTop - transY) / pixelSize)
+            x: Math.floor((evt.clientX - canvas.offsetLeft - width*0.5) / pixelSize),
+            y: -Math.ceil((evt.clientY - canvas.offsetTop - height*0.5) / pixelSize)
         }
     }
+    
+    this.undo = function() {
+        if (buffer_pos == 0) return;
+        buffer_pos--;
+        c.putImageData(buffer[buffer_pos], 0, 0);
+    }
+
+    this.redo = function() {
+        if (buffer.length == 1 || buffer_pos == buffer.length - 1) return;
+        buffer_pos++;
+        c.putImageData(buffer[buffer_pos], 0, 0);
+    }
+
+    this.save_buffer = function() {
+        var imageData = c.getImageData(0, 0, width, height)
+        // Delete all buffer elements above current position
+        while(buffer_pos < buffer.length - 1){
+            buffer.pop()
+        }
+        // If we reached max length, shift away first element
+        if (buffer.length == MAX_LENGTH){
+            buffer.shift();
+            buffer.push(imageData);
+        } else {
+            buffer.push(imageData);
+            buffer_pos++;
+        }
+        
+    }
+
+    this.clear = function() {
+        c.putImageData(clearImage, 0, 0);
+        buffer = [clearImage];
+        buffer_pos = 0;
+    }
+    
 }
 
 
